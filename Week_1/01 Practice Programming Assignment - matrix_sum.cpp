@@ -77,80 +77,88 @@ mstrix_sum.cpp
 
 using namespace std;
 
-// Реализуйте здесь
-// * класс Matrix
 class Matrix {
 public:
-	Matrix()
-		: num_rows(0)
-		, num_cols(0) {}
-
-	Matrix(int rows, int cols) {
-		Reset(rows, cols);
+	// конструктор по умолчанию, который создаёт матрицу с нулём строк и нулём столбцов
+	Matrix() {
+		num_rows_ = 0;
+		num_columns_ = 0;
 	}
-		
 
-	void Reset(int new_rows, int new_cols) {
-		if (new_rows < 0) {
-			throw out_of_range("nums_rows must be >= 0");
+	// конструктор от двух целочисленных параметров: num_rows и num_cols, — которые задают 
+	// количество строк и столбцов матрицы соответственно
+	Matrix(int num_rows, int num_columns) {
+		Reset(num_rows, num_columns);
+	}
+
+
+	// метод Reset, принимающий два целочисленных параметра, которые задают новое количество строк 
+	// и столбцов матрицы соответственно; метод Reset меняет размеры матрицы на заданные и обнуляет 
+	// все её элементы
+	void Reset(int num_rows, int num_columns) {
+		if (num_rows < 0) {
+			throw out_of_range("num_rows must be >= 0");
+		}
+		if (num_columns < 0) {
+			throw out_of_range("num_columns must be >= 0");
 		}
 
-		if (new_cols < 0) {
-			throw out_of_range("nums_columns must be >= 0");
-		}
-
-		if (new_rows == 0 || new_cols == 0) {
-			new_cols = new_cols = 0;
-		}
-		num_rows = new_rows;
-		num_cols = new_cols;
-		elements.assign(new_rows, vector<int>(new_cols));
+		num_rows_ = num_rows;
+		num_columns_ = num_columns;
+		elements_.assign(num_rows, vector<int>(num_columns));
 	}
 
-	int& At(int rows, int cols) {
-		return elements.at(rows).at(cols);
+	// неконстантный метод At с такими же параметрами, но возвращающий ссылку на значение в 
+	// соответствущей ячейке матрицы
+	int& At(int row, int column) {
+		return elements_.at(row).at(column);
 	}
 
-	int At(int rows, int cols) const {
-		return elements.at(rows).at(cols);
+	// константный метод At, который принимает номер строки и номер столбца 
+	// (именно в этом порядке; нумерация строк и столбцов начинается с нуля) и возвращает 
+	// значение в соответствущей ячейке матрицы
+	int At(int row, int column) const {
+		return elements_.at(row).at(column);
 	}
+
+	// константные методы GetNumRows и GetNumColumns, которые возвращают количество строк 
+	// и столбцов матрицы соответственно
 
 	int GetNumRows() const {
-		return num_rows;
+		return num_rows_;
 	}
 
 	int GetNumColumns() const {
-		return num_cols;
+		return num_columns_;
 	}
 
 private:
-	int num_rows;
-	int num_cols;
-
-	vector<vector<int>> elements;
+	int num_rows_;		// число строк
+	int num_columns_;	// число столбцов
+	vector<vector<int>> elements_;
 };
- 
-// * оператор ввода для класса Matrix из потока istream
+
+// оператор ввода из потока istream; формат ввода простой — сначала задаётся количество строк и 
+// столбцов (именно в этом порядке), а затем все элементы матрицы: сначала элемент первой строки 
+// и первого столбца, затем элемент первой строки и второго столбца и так далее
 istream& operator >>(istream& in, Matrix& matrix) {
-	int num_rows;
-	in >> num_rows;
+	int nuw_rows, num_columns;
+	in >> nuw_rows >> num_columns;
 
-	int num_columns;
-	in >> num_columns;
-
-	matrix.Reset(num_rows, num_columns);
-	for (int row = 0; row < num_rows; ++row) {
-		for (int column = 0; column < num_columns; ++column) {
+	matrix.Reset(nuw_rows, num_columns);
+	for (int row = 0; row < nuw_rows; row++) {
+		for (int column = 0; column < num_columns; column++) {
 			in >> matrix.At(row, column);
 		}
 	}
 	return in;
 }
- 
-// * оператор вывода класса Matrix в поток ostream
+
+// оператор вывода в поток ostream; он должен выводить матрицу в том же формате, в каком её 
+// читает оператор ввода, — в первой строке количество строк и столбцов, 
+// во второй — элементы первой строки, в третьей — элементы второй строки и т.д.
 ostream& operator <<(ostream& out, const Matrix& matrix) {
 	out << matrix.GetNumRows() << " " << matrix.GetNumColumns() << endl;
-	
 	for (int row = 0; row < matrix.GetNumRows(); ++row) {
 		for (int column = 0; column < matrix.GetNumColumns(); ++column) {
 			if (column > 0) {
@@ -162,40 +170,43 @@ ostream& operator <<(ostream& out, const Matrix& matrix) {
 	}
 	return out;
 }
- 
-// * оператор проверки на равенство двух объектов класса Matrix
-bool operator ==(const Matrix& lhs, const Matrix& rhs) {
-	if (lhs.GetNumRows() != rhs.GetNumRows()) {
-		return false;
-	}
-	if (lhs.GetNumColumns() != rhs.GetNumColumns()) {
-		return false;
-	}
 
-	for (int row = 0; row < lhs.GetNumRows(); ++row) {
-		for (int col = 0; col < lhs.GetNumColumns(); ++col) {
-			if (lhs.At(row, col) != rhs.At(row, col)) {
+// оператор проверки на равенство (==): он должен возвращать true, если сравниваемые матрицы 
+// имеют одинаковый размер и все их соответствующие элементы равны между собой, 
+// в противном случае он должен возвращать false.
+
+bool operator ==(const Matrix& one, const Matrix& two) {
+	if (one.GetNumRows() != two.GetNumRows()) {
+		return false;
+	}
+	if (one.GetNumColumns() != two.GetNumColumns()) {
+		return false;
+	}
+	for (int row = 0; row < one.GetNumRows(); ++row) {
+		for (int column = 0; column < one.GetNumColumns(); ++column) {
+			if (one.At(row, column) != two.At(row, column)) {
 				return false;
 			}
 		}
 	}
 	return true;
 }
- 
-// * оператор сложения двух объектов класса Matrix
-Matrix operator +(const Matrix& lhs, const Matrix& rhs) {
-	if (lhs.GetNumRows() != rhs.GetNumRows()) {
+
+// оператор сложения: он должен принимать две матрицы и возвращать новую матрицу, 
+// которая является их суммой; если переданные матрицы имеют разные размеры этот оператор 
+// должен выбрасывать стандартное исключение invalid_argument.
+
+Matrix operator +(const Matrix& one, const Matrix& two) {
+	if (one.GetNumRows() != two.GetNumRows()) {
 		throw invalid_argument("Mismatched number of rows");
 	}
-
-	if (lhs.GetNumColumns() != rhs.GetNumColumns()) {
+	if (one.GetNumColumns() != two.GetNumColumns()) {
 		throw invalid_argument("Mismatched number of columns");
 	}
-
-	Matrix result(lhs.GetNumRows(), lhs.GetNumColumns());
-	for (int row = 0; row < lhs.GetNumRows(); ++row) {
-		for (int col = 0; col < lhs.GetNumColumns(); ++col) {
-			result.At(row, col) = lhs.At(row, col) + rhs.At(row, col);
+	Matrix result(one.GetNumRows(), one.GetNumColumns());
+	for (int row = 0; row < result.GetNumRows(); ++row) {
+		for (int column = 0; column < result.GetNumColumns(); ++column) {
+			result.At(row, column) = one.At(row, column) + two.At(row, column);
 		}
 	}
 	return result;
@@ -207,5 +218,49 @@ int main() {
 
 	cin >> one >> two;
 	cout << one + two << endl;
+
 	return 0;
 }
+
+/*
+Пример ввода
+3 5
+6 4 -1 9 8
+12 1 2 9 -5
+-4 0 12 8 6
+
+3 5
+5 1 0 -8 23
+14 5 -6 6 9
+8 0 5 4 1
+
+Пример вывода
+
+3 5
+11 5 -1 1 31
+26 6 -4 15 4
+4 0 17 12 7
+*/
+
+//#include <iostream>
+//#include <fstream>
+//#include <stdexcept>
+//#include <vector>
+//
+//using namespace std;
+
+// Реализуйте здесь
+// * класс Matrix
+// * оператор ввода для класса Matrix из потока istream
+// * оператор вывода класса Matrix в поток ostream
+// * оператор проверки на равенство двух объектов класса Matrix
+// * оператор сложения двух объектов класса Matrix
+
+//int main() {
+//    Matrix one;
+//    Matrix two;
+//
+//    cin >> one >> two;
+//    cout << one + two << endl;
+//    return 0;
+//}
